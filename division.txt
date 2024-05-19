@@ -1,0 +1,141 @@
+section .data
+    prompt1 db 'Por favor, introduce el primer número: ', 0
+    prompt2 db 'Por favor, introduce el segundo número: ', 0
+    result_msg db 'El resultado de la division es: ', 0
+    newline db 10, 0
+    division_by_zero_msg db 'Error: ¡No se puede dividir por cero!', 0
+
+section .bss
+    num1 resb 10
+    num2 resb 10
+    result resd 1
+    result_str resb 11  ; Reserva espacio para una cadena de 10 caracteres y el terminador nulo
+
+section .text
+    global _start
+
+_start:
+    ; Solicitar el primer número
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, prompt1
+    mov edx, 38
+    int 0x80
+
+    ; Leer el primer número
+    mov eax, 3
+    mov ebx, 0
+    mov ecx, num1
+    mov edx, 10
+    int 0x80
+
+    ; Convertir primer número de cadena a entero
+    mov ecx, num1
+    call string_to_int
+    mov [num1], eax
+
+    ; Solicitar el segundo número
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, prompt2
+    mov edx, 39
+    int 0x80
+
+    ; Leer el segundo número
+    mov eax, 3
+    mov ebx, 0
+    mov ecx, num2
+    mov edx, 10
+    int 0x80
+
+    ; Convertir segundo número de cadena a entero
+    mov ecx, num2
+    call string_to_int
+    mov [num2], eax
+
+    ; Cargar los números en los registros de 32 bits
+    mov eax, [num1]       ; Primer número
+    mov ebx, [num2]       ; Segundo número
+
+    ; Verificar si el divisor es cero
+    cmp ebx, 0
+    je division_by_zero_error
+
+    ; Dividir los números
+    xor edx, edx          ; Limpiar edx para la división
+    div ebx
+
+    ; Almacenar el resultado en result
+    mov [result], eax
+
+    ; Convertir el resultado a cadena
+    mov esi, result_str + 10  ; Puntero al final de la cadena result_str
+    mov byte [esi], 0         ; Terminador nulo al final de la cadena
+    mov eax, [result]         ; Cargar el resultado en eax
+
+convert_digit_loop:
+    xor edx, edx            ; Limpiar edx para la división
+    mov ebx, 10             ; Divisor (base 10)
+    div ebx                 ; Dividir eax por 10, resultado en eax, residuo en edx
+    add dl, '0'             ; Convertir el residuo a ASCII
+    dec esi                 ; Retroceder en la cadena result_str
+    mov [esi], dl           ; Almacenar el carácter en la cadena result_str
+    test eax, eax           ; Comprobar si se ha dividido completamente
+    jnz convert_digit_loop  ; Si no es cero, continuar convirtiendo
+
+    ; Mostrar el mensaje de resultado
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, result_msg
+    mov edx, 27
+    int 0x80
+
+    ; Mostrar el resultado
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, esi           ; Puntero al resultado convertido
+    mov edx, 10            ; Longitud de la cadena (máxima longitud de 10)
+    int 0x80
+
+    ; Mostrar nueva línea
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, newline
+    mov edx, 1
+    int 0x80
+
+    ; Salir del programa
+    mov eax, 1
+    xor ebx, ebx
+    int 0x80
+
+division_by_zero_error:
+    ; Mensaje de error si se intenta dividir por cero
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, division_by_zero_msg
+    mov edx, 38
+    int 0x80
+
+    ; Salir del programa con código de error
+    mov eax, 1
+    mov ebx, 1  ; Código de error
+    int 0x80
+
+string_to_int:
+    ; Convierte una cadena ASCII que representa un número decimal en un entero
+    xor eax, eax      ; Inicializar el valor acumulado en 0
+    xor ebx, ebx      ; Inicializar el índice de la cadena en 0
+
+convert_loop:
+    movzx edx, byte [ecx + ebx] ; Cargar el siguiente byte de la cadena
+    cmp edx, 10       ; Comparar con el terminador de nueva línea
+    je convert_done   ; Si es el terminador de nueva línea, terminar la conversión
+    sub edx, '0'      ; Convertir el carácter ASCII a un dígito numérico
+    imul eax, eax, 10 ; Multiplicar el valor acumulado por 10
+    add eax, edx      ; Añadir el dígito al valor acumulado
+    inc ebx           ; Incrementar el índice de la cadena
+    jmp convert_loop  ; Repetir el bucle
+
+convert_done:
+    ret

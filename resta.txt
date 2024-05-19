@@ -1,0 +1,83 @@
+section .data
+    num1_msg db "Ingrese el primer número: ", 0
+    num2_msg db "Ingrese el segundo número: ", 0
+    result_msg db "El resultado de la resta es: ", 0
+    newline db 10, 0
+
+section .bss
+    num1_input resb 2   ; Reserva espacio para 2 caracteres (1 dígito y el terminador nulo)
+    num2_input resb 2   ; Reserva espacio para 2 caracteres (1 dígito y el terminador nulo)
+    result resb 3       ; Reserva espacio para 3 caracteres (máximo 2 dígitos y el terminador nulo)
+
+section .text
+    global _start
+
+_start:
+    ; Solicitar el primer número
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, num1_msg
+    mov edx, 27
+    int 0x80
+
+    ; Leer el primer número
+    mov eax, 3
+    mov ebx, 0
+    mov ecx, num1_input
+    mov edx, 2  ; Leer hasta 2 bytes (1 dígito y el terminador nulo)
+    int 0x80
+
+    ; Convertir el primer número de ASCII a entero
+    sub byte [num1_input], '0'
+
+    ; Solicitar el segundo número
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, num2_msg
+    mov edx, 27
+    int 0x80
+
+    ; Leer el segundo número
+    mov eax, 3
+    mov ebx, 0
+    mov ecx, num2_input
+    mov edx, 2  ; Leer hasta 2 bytes (1 dígito y el terminador nulo)
+    int 0x80
+
+    ; Convertir el segundo número de ASCII a entero
+    sub byte [num2_input], '0'
+
+    ; Realizar la resta de los números
+    movzx ax, byte [num1_input]   ; Cargar el primer número en AX
+    movzx bx, byte [num2_input]   ; Cargar el segundo número en BX
+    sub ax, bx                    ; Restar BX de AX
+
+    ; Convertir el resultado a ASCII
+    add ax, '0'
+    mov [result], ax
+
+    ; Mostrar el mensaje del resultado
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, result_msg
+    mov edx, 27
+    int 0x80
+
+    ; Mostrar el resultado
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, result
+    mov edx, 2
+    int 0x80
+
+    ; Mostrar newline
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, newline
+    mov edx, 1
+    int 0x80
+
+    ; Terminar el programa
+    mov eax, 1
+    xor ebx, ebx
+    int 0x80

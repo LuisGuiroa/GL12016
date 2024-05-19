@@ -1,0 +1,98 @@
+section .data
+    num1_msg db "Ingrese el primer número: ", 0
+    num2_msg db "Ingrese el segundo número: ", 0
+    result_msg db "El resultado de la multiplicación es: ", 0
+    newline db 10, 0
+
+section .bss
+    num1_input resb 1   ; Reserva 1 byte para el número 1
+    num2_input resb 1   ; Reserva 1 byte para el número 2
+    result resb 3       ; Reserva 3 bytes para el resultado (máximo 99)
+
+section .text
+    global _start
+
+_start:
+    ; Solicitar el primer número
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, num1_msg
+    mov edx, 27
+    int 0x80
+
+    ; Leer el primer número
+    mov eax, 3
+    mov ebx, 0
+    mov ecx, num1_input
+    mov edx, 2  ; Leer 1 byte
+    int 0x80
+
+    ; Convertir el primer número de ASCII a entero
+    sub byte [num1_input], '0'
+
+    ; Solicitar el segundo número
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, num2_msg
+    mov edx, 27
+    int 0x80
+
+    ; Leer el segundo número
+    mov eax, 3
+    mov ebx, 0
+    mov ecx, num2_input
+    mov edx, 1  ; Leer 1 byte
+    int 0x80
+
+    ; Convertir el segundo número de ASCII a entero
+    sub byte [num2_input], '0'
+
+    ; Multiplicar los números
+    mov al, [num1_input]
+    mul byte [num2_input]
+
+    ; Convertir el resultado a ASCII
+    mov bx, ax         ; Guardar el resultado de la multiplicación en bx
+    mov cx, 10
+
+    ; División para obtener dígitos
+    xor dx, dx
+    div cx
+    add dl, '0'        ; Primer dígito (menos significativo)
+    mov [result + 1], dl
+    test al, al
+    jz single_digit_result
+    add al, '0'        ; Segundo dígito (más significativo)
+    mov [result], al
+    jmp print_result
+
+single_digit_result:
+    mov byte [result], ' '
+    mov byte [result + 1], dl
+
+print_result:
+    ; Mostrar el mensaje del resultado
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, result_msg
+    mov edx, 34
+    int 0x80
+
+    ; Mostrar el resultado
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, result
+    mov edx, 2
+    int 0x80
+
+    ; Mostrar newline
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, newline
+    mov edx, 1
+    int 0x80
+
+    ; Terminar el programa
+    mov eax, 1
+    xor ebx, ebx
+    int 0x80
